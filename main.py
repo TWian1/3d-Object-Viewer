@@ -1,11 +1,11 @@
 from math import floor, tan, sin, cos, sqrt
-import time
+import re
 
 from pyparsing import col
 def main():
   Cubetris = openobj("teapot")
-  width = 420
-  height = 420
+  width = 64
+  height = 64
   background = background_maker(width, height)
   matProj = [
   [0, 0, 0, 0],
@@ -25,8 +25,8 @@ def main():
   matProj[3][3] = 0.0
   vCamera = [0, 0, 0]
   angle = 0
-  for f in range(1):
-    time1 = time.time()
+  #for f in range(1):
+  while 1:
     alldraw = []
     angle += 1/5 
     background = background_maker(width, height)
@@ -52,8 +52,8 @@ def main():
       triprojected = [[0,0,0], [0,0,0], [0,0,0]]
       trirx = [[0,0,0], [0,0,0], [0,0,0]]
       trirz = [[0,0,0], [0,0,0], [0,0,0]]
-      for a in range(3): Multiplymatrix(tri[a], trirz[a], rotation_z)
-      for a in range(3): Multiplymatrix(trirz[a], trirx[a], rotation_x)
+      #for a in range(3): Multiplymatrix(tri[a], trirz[a], rotation_z)
+      for a in range(3): Multiplymatrix(tri[a], trirx[a], rotation_x)
       tritranslated = trirx
       for a in range(3): tritranslated[a][2] = trirx[a][2] + 3
       line1 = [0, 0, 0]
@@ -73,11 +73,10 @@ def main():
         for a in range(6):triprojected[floor(a/2)][a%2] = (triprojected[floor(a/2)][a%2]+1.0)*(0.5*width)
         triprojected.append([dp, dp, dp, 255])
         alldraw.append(triprojected)
+    alldraw.sort(key=lambda tri:(tri[0][2] + tri[1][2] + tri[2][2]), reverse=True)
     for triproj in alldraw: drawtri(background, round(triproj[0][0]), round(triproj[0][1]), round(triproj[1][0]), round(triproj[1][1]), round(triproj[2][0]), round(triproj[2][1]), fill=True, fillcolor=triproj[3], color=triproj[3])
     for a in imgPrint(background, pre=True): print(a)
-    print(time.time()-time1)
-    print(f'\033[{211}A', end='\x1b[2K')
-    
+    print(f'\033[{32}A', end='\x1b[2K')
 def drawtris(list, set, color=[255,255,255,255], gen=False, bgcolor=[0,0,0,0]):
   if gen:
     list = []
@@ -121,7 +120,7 @@ def openobj(filename):
 def setpix(list,x,y,color=[255,255,255,255]):
   try:list[y][x] = color 
   except:pass
-def setline(list,x,y,x2,y2,color=[255,255,255,255],p='default',gen=False, alr = False, lim = 2000): 
+def setline(list,x,y,x2,y2,color=[255,255,255,255],p='default',gen=False, alr = False, lim = 1000): 
   if gen: 
     if x < x2: x,x2 = 0, x2-x
     else: x2,x = 0, x-x2
@@ -146,12 +145,19 @@ def setline(list,x,y,x2,y2,color=[255,255,255,255],p='default',gen=False, alr = 
   s2 = 1
   if x2-x < 0: s2 = -1
   xpos,ypos, = x,y
-  if p == 'default': p = 1000
+  if p == 'default': p = 70
   toprint = []
+  lypos = -1
+  lxpos = -1
   while(xpos < len(list[0])+lim and xpos > 0-lim and ypos < len(list)+lim and ypos > 0-lim):
-    xpos += (1/p)*s2
-    if vert == 0:ypos = (xpos*s)+yinter
-    else: ypos += vert
+    if vert == 0:
+      xpos += (1/p)*s2
+      ypos = (xpos*s)+yinter
+      if round(xpos) == lxpos and round(ypos) == lypos: continue
+      lypos,lxpos = round(ypos),round(xpos)
+    else: 
+      ypos += vert
+      xpos += (1/len(list))*s2
     
     if (round(xpos) == x2 and round(ypos) == y2) or (abs(xpos-x2) <= 1 and abs(ypos-y2) <=1):
       toprint.append([round(xpos), round(ypos)])
@@ -171,7 +177,6 @@ def upscale(pixelsarray, scale, limx, limy):
         for d in range(scale): out[(a*scale)+c][(b*scale)+d] = pixelsarray[a][b]
   return out
 def drawtri(list, x1, y1, x2, y2, x3, y3, color=[255, 255, 255, 255], gen=False, bgcolor = [0, 0, 0, 0], fill = False, fillcolor = [255, 255, 255]):
-  dat = [x1, y1, x2, y2, x3,y3]
   if gen:
     list = []
     for a in range((max([y1, y2, y3]) - min([y1, y2, y3])) * (max([x1, x2, x3]) - min([x1, x2, x3]))):
@@ -179,21 +184,19 @@ def drawtri(list, x1, y1, x2, y2, x3, y3, color=[255, 255, 255, 255], gen=False,
       list[floor(a/(max([x1, x2, x3]) - min([x1, x2, x3])))].append(bgcolor)
   if fill:
     filltri(list, x1, y1, x2, y2, x3, y3, fillcolor)
+    if color == fillcolor: return 0
+  dat = [x1, y1, x2, y2, x3,y3]
   for a in range(3): setline(list, dat[a*2], dat[(a*2)+1], dat[((a*2)+2) % 6], dat[(((a*2)+2) % 6)+1], color=color)
   if gen: return list
 def filltri(list, x1, y1, x2, y2, x3, y3, color):
-  A = area(x1, y1, x2, y2, x3, y3)
-  minx, miny, maxx, maxy = min(x1, x2, x3), min(y1, y2, y3), max(x1, x2, x3), max(y1, y2, y3)
+  minx, miny, maxx, maxy, A = min(x1, x2, x3), min(y1, y2, y3), max(x1, x2, x3), max(y1, y2, y3), area(x1, y1, x2, y2, x3, y3)
   for y in range(len(list)):
     if y > maxy:break
     if y < miny:continue
     for x in range(len(list[0])):
       if x > maxx:break
       if x < minx:continue
-      A1 = area(x, y, x2, y2, x3, y3)
-      A2 = area(x1, y1, x, y, x3, y3)
-      A3 = area(x1, y1, x2, y2, x, y)
-      if A == A1 + A2 + A3: list[y][x] = color
+      if A == area(x, y, x2, y2, x3, y3) + area(x1, y1, x, y, x3, y3) + area(x1, y1, x2, y2, x, y): list[y][x] = color
 def area(x1, y1, x2, y2, x3, y3):
   return abs((x1*(y2-y3) + x2*(y3-y1)+ x3*(y1-y2))/2.0)
 def acol(list, col=[0, 0, 0]): return combine(background_maker(len(list[0]), len(list)), list, 0, 0, 255)

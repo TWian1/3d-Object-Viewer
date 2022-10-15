@@ -1,82 +1,93 @@
 from math import floor, tan, sin, cos, sqrt
-import re
-
-from pyparsing import col
 def main():
+  matProj = rotations.projection
   Cubetris = openobj("teapot")
   width = 64
-  height = 64
+  height = 48
   background = background_maker(width, height)
-  matProj = [
-  [0, 0, 0, 0],
-  [0, 0, 0, 0],
-  [0, 0, 0, 0],
-  [0, 0, 0, 0]]
-  fNear = 1.0
-  fFar = 1000.0
-  fFov = 90.0
-  fAspectRatio = height/width
-  fFovRad = 1.0/tan(fFov*0.5)
-  matProj[0][0] = fAspectRatio*fFovRad
-  matProj[1][1] = fFovRad
-  matProj[2][2] = fFar / (fFar-fNear)
-  matProj[3][2] = (-fFar*fNear) / (fFar-fNear)
-  matProj[2][3] = 1.0
-  matProj[3][3] = 0.0
-  vCamera = [0, 0, 0]
   angle = 0
-  #for f in range(1):
   while 1:
+  #for f in range(100):
     alldraw = []
-    angle += 1/5 
+    angle += 0.5
     background = background_maker(width, height)
-    rotation_x = [
-            [1, 0, 0, 0],
-            [0, cos(angle*0.5), sin(angle*0.5), 0],
-            [0, -sin(angle*0.5), cos(angle*0.5), 0],
-            [0,0,0,1]
-        ]
-    rotation_z = [
-              [cos(angle), sin(angle), 0, 0],
-              [-sin(angle), cos(angle), 0, 0],
-              [0, 0, 1, 0],
-              [0, 0, 0, 1]
-          ]
-    k = 100
-    q = 0
-    for tri in Cubetris:
-      q+= 1
-      while k >255:
-        k -=100
-      k += 57
-      triprojected = [[0,0,0], [0,0,0], [0,0,0]]
-      trirx = [[0,0,0], [0,0,0], [0,0,0]]
-      trirz = [[0,0,0], [0,0,0], [0,0,0]]
-      #for a in range(3): Multiplymatrix(tri[a], trirz[a], rotation_z)
-      for a in range(3): Multiplymatrix(tri[a], trirx[a], rotation_x)
-      tritranslated = trirx
-      for a in range(3): tritranslated[a][2] = trirx[a][2] + 3
-      line1 = [0, 0, 0]
-      line2 = [0, 0, 0]
-      normal = [0, 0, 0]
-      for a in range(3): line1[a] = tritranslated[1][a]-tritranslated[0][a]
-      for a in range(3): line2[a] = tritranslated[2][a]-tritranslated[0][a]
-      for a in range(3): normal[a] = line1[(a+1)%3]*line2[(a+2)%3] - line1[(a+2)%3]*line2[(a+1)%3]
-      l = sqrt(normal[0]*normal[0] + normal[1]*normal[1] + normal[2]*normal[2])
-      normal = [t/l for t in normal]
-      if normal[2] < 0:
-        light_direction = [0, 0, -1]
-        l = sqrt(light_direction[0]*light_direction[0] + light_direction[1]*light_direction[1] + light_direction[2]*light_direction[2])
-        light_direction = [t/l for t in light_direction]
-        dp = round((normal[0]*light_direction[0] + normal[1]*light_direction[1] + normal[2]*light_direction[2])*230)+25
-        for a in range(3):Multiplymatrix(tritranslated[a], triprojected[a], matProj)
-        for a in range(6):triprojected[floor(a/2)][a%2] = (triprojected[floor(a/2)][a%2]+1.0)*(0.5*width)
-        triprojected.append([dp, dp, dp, 255])
-        alldraw.append(triprojected)
-    alldraw.sort(key=lambda tri:(tri[0][2] + tri[1][2] + tri[2][2]), reverse=True)
-    for triproj in alldraw: drawtri(background, round(triproj[0][0]), round(triproj[0][1]), round(triproj[1][0]), round(triproj[1][1]), round(triproj[2][0]), round(triproj[2][1]), fill=True, fillcolor=triproj[3], color=triproj[3])
+    alldraw = displaymid([], Cubetris, angle, width, height, ["x"])
+    for triproj in alldraw:
+      drawtri(background, round(triproj[0][0]), round(triproj[0][1]), round(triproj[1][0]), round(triproj[1][1]), round(triproj[2][0]), round(triproj[2][1]), fill=True, fillcolor=triproj[3], color=triproj[3])
     for a in imgPrint(background, pre=True): print(a)
-    print(f'\033[{32}A', end='\x1b[2K')
+    print(f'\033[{24}A', end='\x1b[2K')
+
+
+def zerolist(x, y=0, two = False):
+  out = []
+  if two:
+    for a in range(x*y):
+      if a%x==0:out.append([])
+      out[floor(a/x)].append(0)
+  else:
+    for a in range(x): out.append(0)
+  return out
+def displaymid(list, render_object, angle, width, height, rotate, pre=True):
+  alldraw = []
+  for tri in render_object:
+    triprojected = trirx = newtri = zerolist(3, 3, True)
+    for a in rotate:
+      newtri = tri
+      if a == "x":
+        for a in range(3): td.Multiplymatrix(newtri[a], trirx[a], rotations.x(angle))
+        newtri = trirx
+      if a == "z":
+        for a in range(3): td.Multiplymatrix(newtri[a], trirx[a], rotations.z(angle))
+        newtri = trirx
+      if a == "y":
+        for a in range(3): td.Multiplymatrix(newtri[a], trirx[a], rotations.y(angle))
+        newtri = trirx
+    for a in range(3):
+      newtri[a][1] = newtri[a][1]*-1
+    tritranslated = newtri
+    for a in range(3): tritranslated[a][2] = trirx[a][2] + 2
+    normal,line1,line2 = zerolist(3),td.vector_sub(tritranslated[1], tritranslated[0]),td.vector_sub(tritranslated[2], tritranslated[0])
+    for a in range(3): normal[a] = line1[(a+1)%3]*line2[(a+2)%3] - line1[(a+2)%3]*line2[(a+1)%3]
+    normal = td.normalize(normal)
+    if normal[2] < 0:
+      light_direction = td.normalize([0, 0, -1])
+      dp = round(td.dotprod(normal, light_direction)*230)+25
+      for a in range(3):td.Multiplymatrix(tritranslated[a], triprojected[a], rotations.projection(width, height))
+      for a in range(6):triprojected[floor(a/2)][a%2] = (triprojected[floor(a/2)][a%2]+1.0)*((width+height)/4)
+      triprojected.append([dp, dp, dp, 255])
+      alldraw.append(triprojected)
+  alldraw.sort(key=lambda tri:(tri[0][2] + tri[1][2] + tri[2][2]))
+  return alldraw
+class rotations:
+  def x(angle): return [[1, 0, 0, 0],[0, cos(angle*0.5), sin(angle*0.5), 0],[0, -sin(angle*0.5), cos(angle*0.5), 0],[0,0,0,1]]
+  def z(angle): return [[cos(angle), sin(angle), 0, 0],[-sin(angle), cos(angle), 0, 0],[0, 0, 1, 0],[0, 0, 0, 1]]
+  def y(angle): return [[cos(angle), 0, sin(angle), 0],[0, 1, 0, 0],[-sin(angle), 0, cos(angle), 0],[0, 0, 0, 1]]
+  def projection(height, width):
+    fNear = 1.0
+    fFar = 1000.0
+    fFov = 90.0
+    fAspectRatio = height/width
+    fFovRad = 1.0/tan(fFov*0.5)
+    matrix = [
+    [fAspectRatio*fFovRad,0, 0, 0],
+    [0, fFovRad, 0, 0],
+    [0, 0, fFar / (fFar-fNear), (-fFar*fNear) / (fFar-fNear)],
+    [0, 0, 1, 0]]
+    return matrix
+class td:
+  def Multiplymatrix(i, o, m):
+    o[0] = i[0] * m[0][0] + i[1] * m[1][0] + i[2] * m[2][0] + m[3][0]
+    o[1] = i[0] * m[0][1] + i[1] * m[1][1] + i[2] * m[2][1] + m[3][1]
+    o[2] = i[0] * m[0][2] + i[1] * m[1][2] + i[2] * m[2][2] + m[3][2]
+    w = i[0] * m[0][3] + i[1] * m[1][3] + i[2] * m[2][3] + m[3][3]
+    if w != 0: o = td.vector_div(o, w)
+  def vector_add(list1, list2): return [list1[0]+list2[0], list1[1]+list2[1], list1[2]+list2[2]]
+  def vector_sub(list1, list2): return [list1[0]-list2[0], list1[1]-list2[1], list1[2]-list2[2]]
+  def vector_mul(list1, a): return [list1[0]*a, list1[1]*a, list1[2]*a]
+  def vector_div(list1, a): return [list1[0]/a, list1[1]/a, list1[2]/a]
+  def dotprod(list1, list2): return list1[0]*list2[0] + list1[1]*list2[1] + list1[2]*list2[2]
+  def length(list1): return sqrt(td.dotprod(list1, list1))
+  def normalize(list1): return td.vector_div(list1, td.length(list1))
 def drawtris(list, set, color=[255,255,255,255], gen=False, bgcolor=[0,0,0,0]):
   if gen:
     list = []
@@ -88,12 +99,6 @@ def drawtris(list, set, color=[255,255,255,255], gen=False, bgcolor=[0,0,0,0]):
     return list
   else: 
     for a in set: drawtri(list, a[0][0], a[0][1], a[1][0], a[1][1], a[2][0], a[2][1])
-def Multiplymatrix(i, o, m):
-  o[0] = i[0] * m[0][0] + i[1] * m[1][0] + i[2] * m[2][0] + m[3][0]
-  o[1] = i[0] * m[0][1] + i[1] * m[1][1] + i[2] * m[2][1] + m[3][1]
-  o[2] = i[0] * m[0][2] + i[1] * m[1][2] + i[2] * m[2][2] + m[3][2]
-  w = i[0] * m[0][3] + i[1] * m[1][3] + i[2] * m[2][3] + m[3][3]
-  if w != 0: o = [x/w for x in o]
 def background_maker(x, y='default', color=[0,0,0,0]):
   out = []
   if y == 'default': y = x

@@ -1,0 +1,13 @@
+How to change settings:
+
+Everything modifiable is in the main function.  the for loop is the number of frames to be generated.  The background maker is the size of the
+background (update the numbers in the olddraw and set the number in the print(f'\033[{number}]A' , end='\x1b[2K') to be half the height) .  The openobj opens a obj file
+that has been converted into a text file without the .txt at the end. The rotate is the direction of rotation either x, y or z.  Angle is the angle at which the object rotates. and lightloc is the
+location of the light. 
+
+
+
+How to import an object from blender:
+
+export the desired object as a .obj(waveform) to the file with the python script.
+change the .obj file into a text file

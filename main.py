@@ -1,8 +1,7 @@
 from math import floor, tan, sin, cos, sqrt
 def main():
     for a in range(100):
-        background = background_maker(100,60)
-        tris = olddraw(openobj("teapot"), 100, 60, rotate="y", angle=(a/2),lightloc=[0, 1,-1])
+        background,tris = background_maker(50,50),olddraw(openobj("teapot"), 50, 50, rotate="x", angle=(a/2),lightloc=[0, 1,-1])
         for tri in tris: filltri(background, tri, tri[3])
         for a in imgPrint(background, pre=True): print(a)
         print(f'\033[{30}A', end='\x1b[2K')
@@ -15,47 +14,41 @@ def olddraw(render_object, width, height, rotate, angle, lightloc = [0, 1, -1]):
     for a in range(3): tritranslated[a][2] = newtri[a][2] + 2
     normal,line1,line2 = [0,0,0],td.vector_sub(tritranslated[1], tritranslated[0]),td.vector_sub(tritranslated[2], tritranslated[0])
     for a in range(3): normal[a] = line1[(a+1)%3]*line2[(a+2)%3] - line1[(a+2)%3]*line2[(a+1)%3]
-    normal = td.normalize(normal)
-    if normal[2] < 0:
-      light_direction = td.normalize(lightloc)
-      dp = max(round(td.dotprod(normal, light_direction)*230),0)+25
+    if (normal := td.normalize(normal))[2] < 0:
+      dp = max(round(td.dotprod(normal, td.normalize(lightloc))*230),0)+25
       for a in range(3):td.Multiplymatrix(tritranslated[a], triprojected[a], rotations.projection())
-      for a in range(6):triprojected[floor(a/2)][a%2] = (triprojected[floor(a/2)][a%2]+1.0)*((width+height)/4)
+      for a in range(6):triprojected[a//2][a%2] = (triprojected[a//2][a%2]+1.0)*((width+height)/4)
       triprojected.append([dp, dp, dp, 255])
       alldraw.append(triprojected)
   alldraw.sort(key=lambda tri:(tri[0][2] + tri[1][2] + tri[2][2]))
   return alldraw
 class td:
   def Multiplymatrix(i, o, m):
-    o[0] = i[0] * m[0][0] + i[1] * m[1][0] + i[2] * m[2][0] + m[3][0]
-    o[1] = i[0] * m[0][1] + i[1] * m[1][1] + i[2] * m[2][1] + m[3][1]
-    o[2] = i[0] * m[0][2] + i[1] * m[1][2] + i[2] * m[2][2] + m[3][2]
+    o[0], o[1], o[2] = [i[0] * m[0][j] + i[1] * m[1][j] + i[2] * m[2][j] + m[3][j] for j in range(3)]
     w = i[0] * m[0][3] + i[1] * m[1][3] + i[2] * m[2][3] + m[3][3]
     if w != 0: o = td.vector_div(o, w)
-  def vector_add(list1, list2): return [list1[0]+list2[0], list1[1]+list2[1], list1[2]+list2[2]]
   def vector_sub(list1, list2): return [list1[0]-list2[0], list1[1]-list2[1], list1[2]-list2[2]]
-  def vector_mul(list1, a): return [list1[0]*a, list1[1]*a, list1[2]*a]
   def vector_div(list1, a): return [list1[0]/a, list1[1]/a, list1[2]/a]
   def dotprod(list1, list2): return list1[0]*list2[0] + list1[1]*list2[1] + list1[2]*list2[2]
-  def length(list1): return sqrt(td.dotprod(list1, list1))
-  def normalize(list1): return td.vector_div(list1, td.length(list1))
+  def normalize(list1): return td.vector_div(list1, sqrt(td.dotprod(list1, list1)))
 def background_maker(x, y='default', color=[0,0,0,0]):
   out = []
   if y == 'default': y = x
   for a in range(y*x):
     if a%x==0:out.append([])
-    out[floor(a/x)].append(color)
+    out[a//x].append(color)
   return out
 def openobj(filename):
-  file,verts,faces,out,maximum = open(filename + ".txt").readlines(),[],[],[],0
-  for a in file:
+  file,verts,faces,out,maximum = open(filename + ".txt"),[],[],[],0
+  for a in file.readlines():
     if a[0] == 'v': verts.append([float(x) for x in a[2:][:-1].split(' ')])
     elif a[0] == 'f': faces.append([int(x) for x in a[2:][:-1].split(' ')])
   for a in verts:
-    if max([abs(b) for b in a]) > maximum: maximum = max([abs(b) for b in a])
+    if max(map(abs, a)) > maximum: maximum = max(map(abs, a))
   for b in faces:
     out.append([])
     for c in b: out[len(out)-1].append([q/maximum for q in verts[c-1]])
+  file.close()
   return out
 class rotations:
   def rotate(dir, angle): 
@@ -83,7 +76,7 @@ def filltri(list, coords, color, rounded = True):
 def area(x1, y1, x2, y2, x3, y3): return abs((x1*(y2-y3) + x2*(y3-y1)+ x3*(y1-y2))/2.0)
 def imgPrint(pixelsarray,pre=False):
   height,width,total = len(pixelsarray),len(pixelsarray[0]),[]
-  for a in range(floor(height/2)):
+  for a in range(height//2):
     string_temp = ""
     for b in range(width):
       clr = [0,0,0,0,0,0]
@@ -95,5 +88,4 @@ def imgPrint(pixelsarray,pre=False):
     if pre == False: print(string_temp)
     else: total.append(string_temp)
   if pre: return total
-if __name__ == "__main__":
-  main()
+if __name__ == "__main__": main()
